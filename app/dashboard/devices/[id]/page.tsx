@@ -11,8 +11,10 @@ import styles from "../../../premium.module.css";
 import {
   ArrowLeft, Smartphone, Battery, Thermometer, Activity, Clock,
   Wifi, WifiOff, BarChart2, Calendar, TrendingUp, Droplets,
-  FlaskConical, Zap, Info, Hash,
+  FlaskConical, Zap, Info, Hash, Download, FileSpreadsheet, X,
 } from "lucide-react";
+
+import { exportCustomReadings, exportDailySummariesCsv } from "./exportUtils";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function fmt(v: number | undefined, digits = 1, unit = "") {
@@ -101,6 +103,12 @@ export default function DeviceDetailsPage() {
   const [totalReadingsCount, setTotalReadingsCount] = useState<number>(0);
   const [selectedDate, setSelectedDate]   = useState<string>("");
   const [isLoadingReadings, setIsLoadingReadings] = useState(false);
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState<"specific" | "range" | "all">("specific");
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => { if (id) fetchAll(); }, [id]);
 
@@ -265,6 +273,21 @@ export default function DeviceDetailsPage() {
   const yearlyMonths: Record<string, number> = {};
   if (monthlyGraph?.days) Object.entries(monthlyGraph.days).forEach(([k, v]: any) => { monthlyDays[k] = Number(v) || 0; });
   if (yearlyGraph?.months) Object.entries(yearlyGraph.months).forEach(([k, v]: any) => { yearlyMonths[k] = Number(v) || 0; });
+
+  const handleCustomExport = async () => {
+    await exportCustomReadings(
+      device.id,
+      exportType,
+      exportStartDate,
+      exportEndDate,
+      {
+        onStart: () => setIsExporting(true),
+        onSuccess: () => setIsExportModalOpen(false),
+        onError: () => {},
+        onEnd: () => setIsExporting(false),
+      }
+    );
+  };
 
   return (
     <div className={styles.dashboardContent}>
@@ -568,16 +591,123 @@ export default function DeviceDetailsPage() {
         </Section>
       </div>
 
-      {/* ── Footer: Export hint ───────────────────────────────────────────── */}
-      <div className={`${styles.glassPanel} p-5 flex items-center gap-4`} style={{ borderStyle: "dashed" }}>
-        <Hash size={20} className="text-[#0FA56F] shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">CSV / Excel Export — Coming Soon</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            All data shown above (readings, daily summaries, monthly summaries) will be exportable as CSV / Excel for offline analysis.
-          </p>
+      {/* ── Footer: Export Section ───────────────────────────────────────────── */}
+      <div className={`${styles.glassPanel} p-6 flex flex-col md:flex-row items-center justify-between gap-4`} style={{ borderStyle: "dashed" }}>
+        <div className="flex items-center gap-4">
+          <FileSpreadsheet size={24} className="text-[#0FA56F] shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Data Export</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Download the device data as CSV for offline analysis. 
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex items-center gap-2 bg-[var(--nav-item-active-bg)] text-[#0FA56F] border border-[var(--border-color)] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0FA56F] hover:text-white transition-colors"
+          >
+            <Download size={16} /> Raw Readings
+          </button>
+          <button 
+            onClick={() => exportDailySummariesCsv(dailySums, device.id)}
+            className="flex items-center gap-2 bg-[var(--nav-item-active-bg)] text-[#0FA56F] border border-[var(--border-color)] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0FA56F] hover:text-white transition-colors"
+          >
+            <Download size={16} /> Daily Summaries
+          </button>
         </div>
       </div>
+
+      {/* ── Export Modal ─────────────────────────────────────────────────── */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className={`${styles.glassPanel} w-full max-w-md p-6 relative`} style={{ background: "var(--glass-bg)", borderColor: "var(--border-color)" }}>
+            <button 
+              onClick={() => setIsExportModalOpen(false)}
+              className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+              <Download size={20} className="text-[#0FA56F]" />
+              Export Custom Data
+            </h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-2">Export Scope</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button 
+                    onClick={() => setExportType("specific")}
+                    className={`py-2 px-3 text-sm rounded-lg border transition-colors ${exportType === "specific" ? "bg-[#0FA56F]/10 border-[#0FA56F] text-[#0FA56F]" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#0FA56F]/50"}`}
+                  >
+                    Specific Day
+                  </button>
+                  <button 
+                    onClick={() => setExportType("range")}
+                    className={`py-2 px-3 text-sm rounded-lg border transition-colors ${exportType === "range" ? "bg-[#0FA56F]/10 border-[#0FA56F] text-[#0FA56F]" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#0FA56F]/50"}`}
+                  >
+                    Date Range
+                  </button>
+                  <button 
+                    onClick={() => setExportType("all")}
+                    className={`py-2 px-3 text-sm rounded-lg border transition-colors ${exportType === "all" ? "bg-[#0FA56F]/10 border-[#0FA56F] text-[#0FA56F]" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#0FA56F]/50"}`}
+                  >
+                    All Data
+                  </button>
+                </div>
+              </div>
+
+              {exportType !== "all" && (
+                <div>
+                  <label className="block text-sm text-[var(--text-secondary)] mb-2">
+                    {exportType === "specific" ? "Select Date" : "Start Date"}
+                  </label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0FA56F]"
+                    style={{ colorScheme: "var(--calendar-scheme)" }}
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    onClick={(e) => { try { if ("showPicker" in e.target) { (e.target as HTMLInputElement).showPicker(); } } catch {} }}
+                  />
+                </div>
+              )}
+
+              {exportType === "range" && (
+                <div>
+                  <label className="block text-sm text-[var(--text-secondary)] mb-2">End Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#0FA56F]"
+                    style={{ colorScheme: "var(--calendar-scheme)" }}
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    onClick={(e) => { try { if ("showPicker" in e.target) { (e.target as HTMLInputElement).showPicker(); } } catch {} }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setIsExportModalOpen(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--td-border)] transition-colors"
+                disabled={isExporting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCustomExport}
+                disabled={isExporting || (exportType !== "all" && !exportStartDate) || (exportType === "range" && !exportEndDate)}
+                className="flex items-center gap-2 bg-[#0FA56F] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0e9363] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? "Exporting..." : "Download CSV"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
