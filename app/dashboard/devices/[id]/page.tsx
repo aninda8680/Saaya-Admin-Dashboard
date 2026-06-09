@@ -415,8 +415,16 @@ export default function DeviceDetailsPage() {
               <input 
                 type="date" 
                 className="bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded px-3 py-1.5 text-xs outline-none focus:border-[#0FA56F]"
+                style={{ colorScheme: "var(--calendar-scheme)" }}
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    if ("showPicker" in e.target) {
+                      (e.target as HTMLInputElement).showPicker();
+                    }
+                  } catch (err) {}
+                }}
               />
             </div>
           }
