@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { checkAdmin } from "@/lib/checkAdmin";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { checkAdmin } from "@/src/lib/checkAdmin";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

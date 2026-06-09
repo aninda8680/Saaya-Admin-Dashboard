@@ -1,8 +1,8 @@
 "use client";
 
 import { signOut } from "firebase/auth";
-import { auth } from "@/firebase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/src/firebase/client";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {

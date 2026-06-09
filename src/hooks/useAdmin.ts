@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { checkAdmin } from "@/lib/checkAdmin";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { checkAdmin } from "@/src/lib/checkAdmin";
 
 export function useAdmin() {
   const { user, loading } = useAuth();

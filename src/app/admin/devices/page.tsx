@@ -2,7 +2,7 @@
 
 import { collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { db } from "@/firebase/client";
+import { db } from "@/src/firebase/client";
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<any[]>([]);

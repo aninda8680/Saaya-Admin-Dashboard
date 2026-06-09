@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { auth } from "@/firebase/client";
-import { checkAdmin } from "@/lib/checkAdmin";
+import { auth } from "@/src/firebase/client";
+import { checkAdmin } from "@/src/lib/checkAdmin";
 
 export default function LoginPage() {
   const router = useRouter();

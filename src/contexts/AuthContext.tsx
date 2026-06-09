@@ -2,7 +2,7 @@
 
 import { onAuthStateChanged, User } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "@/firebase/client";
+import { auth } from "@/src/firebase/client";
 
 const AuthContext = createContext<{
   user: User | null;
