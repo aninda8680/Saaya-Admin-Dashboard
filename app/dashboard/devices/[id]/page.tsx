@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import {
   doc, getDoc, collection, getDocs, query, orderBy, limit, where
 } from "firebase/firestore";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import styles from "../../../premium.module.css";
 import {
   ArrowLeft, Smartphone, Battery, Thermometer, Activity, Clock,
@@ -61,6 +62,59 @@ function MiniBarChart({ data, label }: { data: Record<string, number>; label: st
   );
 }
 
+// ─── line chart for single day graph ────────────────────────────────────
+function SingleDayLineChart({ data, label }: { data: { time: string; value: number }[]; label: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return <div style={{ height: 350 }} className="pt-4" />;
+
+  if (data.length === 0) return <p className="text-[var(--text-secondary)] text-sm">No graph data for this date</p>;
+
+  return (
+    <div style={{ width: '100%', height: 350 }} className="pt-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 16, bottom: 5, left: -10 }}
+          style={{ background: "transparent" }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+          <XAxis
+            dataKey="time"
+            tick={{ fill: "#ffffff", fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: "rgba(255,255,255,0.15)" }}
+            minTickGap={30}
+          />
+          <YAxis
+            tick={{ fill: "#ffffff", fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v) => v.toFixed(1)}
+            width={48}
+          />
+          <RechartsTooltip
+            contentStyle={{ backgroundColor: "var(--glass-bg)", borderColor: "var(--border-color)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+            itemStyle={{ color: "#0FA56F", fontWeight: 600 }}
+            labelStyle={{ color: "var(--text-secondary)", marginBottom: 4 }}
+            cursor={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="value"
+            name={label}
+            stroke="#0FA56F"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 6, fill: "#0FA56F", stroke: "transparent", strokeWidth: 0 }}
+            connectNulls={true}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 // ─── section card ────────────────────────────────────────────────────────────
 function Section({ title, icon, children, headerRight }: { title: string; icon: React.ReactNode; children: React.ReactNode; headerRight?: React.ReactNode }) {
   return (
@@ -102,6 +156,7 @@ export default function DeviceDetailsPage() {
   const [loading, setLoading]             = useState(true);
   const [totalReadingsCount, setTotalReadingsCount] = useState<number>(0);
   const [selectedDate, setSelectedDate]   = useState<string>("");
+  const [singleDayEntity, setSingleDayEntity] = useState<string>("temperature");
   const [isLoadingReadings, setIsLoadingReadings] = useState(false);
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -241,6 +296,36 @@ export default function DeviceDetailsPage() {
     if (!id || loading) return;
     fetchReadingsForDate(selectedDate);
   }, [selectedDate]);
+
+  // Build single day graph data
+  const singleDayChartData = useMemo(() => {
+    if (!selectedDate || readings.length === 0) return [];
+    
+    // Sort readings chronologically
+    const sortedReadings = [...readings].sort((a, b) => {
+      if (!a.ts || !b.ts) return 0;
+      return a.ts.toMillis() - b.ts.toMillis();
+    });
+
+    const data: { time: string; value: number }[] = [];
+    
+    sortedReadings.forEach(r => {
+      if (!r.ts) return;
+      let d;
+      try { d = r.ts.toDate(); } catch { return; }
+      
+      const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      
+      if (r[singleDayEntity] !== undefined && !isNaN(Number(r[singleDayEntity]))) {
+        data.push({
+          time: timeStr,
+          value: Number(r[singleDayEntity])
+        });
+      }
+    });
+
+    return data;
+  }, [readings, selectedDate, singleDayEntity]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-[#0FA56F] font-medium animate-pulse">
@@ -561,6 +646,65 @@ export default function DeviceDetailsPage() {
               </tbody>
             </table>
           </div>
+        </Section>
+      </div>
+
+      {/* ── Single Day Graph ─────────────────────────── */}
+      <div className="mb-6">
+        <Section 
+          title={`Single Day Graph ${selectedDate ? `— ${selectedDate}` : ""}`}
+          icon={<BarChart2 size={18} />}
+          headerRight={
+            <div className="flex items-center gap-2">
+              <input 
+                type="date" 
+                className="bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded px-3 py-1.5 text-xs outline-none focus:border-[#0FA56F]"
+                style={{ colorScheme: "var(--calendar-scheme)" }}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    if ("showPicker" in e.target) {
+                      (e.target as HTMLInputElement).showPicker();
+                    }
+                  } catch (err) {}
+                }}
+              />
+              <select
+                value={singleDayEntity}
+                onChange={(e) => setSingleDayEntity(e.target.value)}
+                className="bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded px-3 py-1.5 text-xs outline-none focus:border-[#0FA56F] font-medium"
+              >
+                <option value="temperature">Temperature (°C)</option>
+                <option value="moisture">Moisture (%)</option>
+                <option value="ph">pH</option>
+                <option value="ec">EC</option>
+                <option value="n">Nitrogen (N)</option>
+                <option value="p">Phosphorus (P)</option>
+                <option value="k">Potassium (K)</option>
+              </select>
+              {selectedDate && (
+                <button 
+                  onClick={() => setSelectedDate("")} 
+                  className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-colors ml-2 hidden sm:block"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          }
+        >
+          {selectedDate ? (
+            <SingleDayLineChart 
+              data={singleDayChartData} 
+              label={singleDayEntity.charAt(0).toUpperCase() + singleDayEntity.slice(1)} 
+            />
+          ) : (
+            <div className="py-8 text-center text-[var(--text-secondary)] text-sm flex flex-col items-center justify-center border border-dashed border-[var(--td-border)] rounded-lg">
+              <Calendar size={24} className="mb-2 text-[var(--text-secondary)] opacity-50" />
+              <p>Please select a date to view the daily graph.</p>
+            </div>
+          )}
         </Section>
       </div>
 
