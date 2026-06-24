@@ -63,7 +63,7 @@ function MiniBarChart({ data, label }: { data: Record<string, number>; label: st
 }
 
 // ─── line chart for single day graph ────────────────────────────────────
-function SingleDayLineChart({ data, label }: { data: { time: string; value: number }[]; label: string }) {
+function SingleDayLineChart({ data, label, unit }: { data: { time: string; value: number }[]; label: string; unit?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return <div style={{ height: 350 }} className="pt-4" />;
@@ -75,29 +75,30 @@ function SingleDayLineChart({ data, label }: { data: { time: string; value: numb
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}
-          margin={{ top: 5, right: 16, bottom: 5, left: -10 }}
+          margin={{ top: 5, right: 16, bottom: 20, left: 0 }}
           style={{ background: "transparent" }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
           <XAxis
             dataKey="time"
-            tick={{ fill: "#ffffff", fontSize: 11 }}
+            tick={{ fill: "var(--chart-axis-text)", fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: "rgba(255,255,255,0.15)" }}
+            axisLine={{ stroke: "var(--border-color)" }}
             minTickGap={30}
+            label={{ value: "Time", position: "insideBottom", offset: -15, fill: "var(--chart-axis-text)", fontSize: 12 }}
           />
           <YAxis
-            tick={{ fill: "#ffffff", fontSize: 11 }}
+            tick={{ fill: "var(--chart-axis-text)", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => v.toFixed(1)}
-            width={48}
+            tickFormatter={(v) => `${v.toFixed(1)}${unit || ''}`}
+            width={75}
           />
           <RechartsTooltip
             contentStyle={{ backgroundColor: "var(--glass-bg)", borderColor: "var(--border-color)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
             itemStyle={{ color: "#0FA56F", fontWeight: 600 }}
             labelStyle={{ color: "var(--text-secondary)", marginBottom: 4 }}
-            cursor={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
+            cursor={{ stroke: "var(--border-color)", strokeWidth: 1 }}
           />
           <Line
             type="monotone"
@@ -673,15 +674,15 @@ export default function DeviceDetailsPage() {
               <select
                 value={singleDayEntity}
                 onChange={(e) => setSingleDayEntity(e.target.value)}
-                className="bg-[var(--td-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded px-3 py-1.5 text-xs outline-none focus:border-[#0FA56F] font-medium"
+                className="bg-[var(--glass-bg)] border border-[var(--td-border)] text-[var(--text-primary)] rounded px-3 py-1.5 text-xs outline-none focus:border-[#0FA56F] font-medium"
               >
-                <option value="temperature">Temperature (°C)</option>
-                <option value="moisture">Moisture (%)</option>
-                <option value="ph">pH</option>
-                <option value="ec">EC</option>
-                <option value="n">Nitrogen (N)</option>
-                <option value="p">Phosphorus (P)</option>
-                <option value="k">Potassium (K)</option>
+                <option value="temperature" className="bg-[var(--bg-color)]">Temperature (°C)</option>
+                <option value="moisture" className="bg-[var(--bg-color)]">Moisture (%)</option>
+                <option value="ph" className="bg-[var(--bg-color)]">pH</option>
+                <option value="ec" className="bg-[var(--bg-color)]">EC</option>
+                <option value="n" className="bg-[var(--bg-color)]">Nitrogen (N)</option>
+                <option value="p" className="bg-[var(--bg-color)]">Phosphorus (P)</option>
+                <option value="k" className="bg-[var(--bg-color)]">Potassium (K)</option>
               </select>
               {selectedDate && (
                 <button 
@@ -698,6 +699,12 @@ export default function DeviceDetailsPage() {
             <SingleDayLineChart 
               data={singleDayChartData} 
               label={singleDayEntity.charAt(0).toUpperCase() + singleDayEntity.slice(1)} 
+              unit={
+                singleDayEntity === 'temperature' ? '°C' : 
+                singleDayEntity === 'moisture' ? '%' : 
+                singleDayEntity === 'ec' ? ' mS/cm' :
+                ['n', 'p', 'k'].includes(singleDayEntity) ? ' mg/kg' : ''
+              }
             />
           ) : (
             <div className="py-8 text-center text-[var(--text-secondary)] text-sm flex flex-col items-center justify-center border border-dashed border-[var(--td-border)] rounded-lg">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
 import styles from "../../premium.module.css";
 import { Smartphone, Copy } from "lucide-react";
 
@@ -55,13 +55,29 @@ export default function DevicesPage() {
         }
       });
 
-      // 3. Inject owner
-      devicesData.forEach(device => {
+      // 3. Inject owner and fetch last seen
+      await Promise.all(devicesData.map(async (device) => {
         if (deviceToOwnerMap[device.id]) {
           device.owner = deviceToOwnerMap[device.id].id;
           device.ownerName = deviceToOwnerMap[device.id].name;
         }
-      });
+
+        try {
+          const statusSnap = await getDoc(doc(db, "devices", device.id, "status", "current"));
+          if (statusSnap.exists()) {
+            const statusData = statusSnap.data();
+            device.lastSeen = statusData.lastOnlineAt || statusData.updatedAt || device.lastSeen;
+          } else {
+             const liveSnap = await getDoc(doc(db, "devices", device.id, "live", "latest"));
+             if (liveSnap.exists()) {
+               const liveData = liveSnap.data();
+               device.lastSeen = liveData.updatedAt || device.lastSeen;
+             }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch last seen for device", device.id, e);
+        }
+      }));
       
       // Sort by status or ID locally
       devicesData.sort((a, b) => a.id.localeCompare(b.id));
@@ -110,8 +126,9 @@ export default function DevicesPage() {
             <tbody>
               {devices.map((device) => {
                 let badgeClass = styles.badgeOffline;
-                if (device.status === 'online') badgeClass = styles.badgeOnline;
-                else if (device.status === 'standby') badgeClass = styles.badgeActive; // using active color for standby
+                let displayStatus = 'offline';
+                // if (device.status === 'online') badgeClass = styles.badgeOnline;
+                // else if (device.status === 'standby') badgeClass = styles.badgeActive; // using active color for standby
                 
                 return (
                   <tr key={device.id}>
@@ -122,7 +139,7 @@ export default function DevicesPage() {
                     </td>
                     <td>
                       <span className={`${styles.badge} ${badgeClass}`}>
-                        {device.status || 'unknown'}
+                        {displayStatus}
                       </span>
                     </td>
                     <td className="font-medium text-gray-800">
