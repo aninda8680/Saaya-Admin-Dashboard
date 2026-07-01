@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getCountFromServer } from "firebase/firestore";
 import { Users, Smartphone } from "lucide-react";
-import styles from "../premium.module.css";
-import { logToServer } from "../actions";
+import styles from "@/app/premium.module.css";
+import { logToServer } from "@/app/actions";
+import { useTranslations } from "next-intl";
 
 export default function Dashboard() {
+  const t = useTranslations("Dashboard");
   const [totalUsers, setTotalUsers] = useState<number | "-">("-");
   const [totalDevices, setTotalDevices] = useState<number | "-">("-");
   const [fetching, setFetching] = useState(false);
@@ -44,14 +46,14 @@ export default function Dashboard() {
   return (
     <div className={styles.dashboardContent}>
       <div className={styles.pageHeader}>
-        <h2 className={styles.pageTitle}>Dashboard Overview</h2>
-        <p className={styles.pageSubtitle}>Monitor your system metrics and user activity.</p>
+        <h2 className={styles.pageTitle}>{t("title")}</h2>
+        <p className={styles.pageSubtitle}>{t("subtitle")}</p>
       </div>
 
       <div className={styles.statsGrid}>
         <div className={`${styles.glassPanel} ${styles.statCard}`}>
           <div className={styles.statHeader}>
-            <span>Total Users</span>
+            <span>{t("totalUsers")}</span>
             <div className={`${styles.statIconWrapper} ${styles.blue}`}>
               <Users size={20} />
             </div>
@@ -61,7 +63,7 @@ export default function Dashboard() {
         
         <div className={`${styles.glassPanel} ${styles.statCard}`}>
           <div className={styles.statHeader}>
-            <span>Total Devices</span>
+            <span>{t("totalDevices")}</span>
             <div className={`${styles.statIconWrapper} ${styles.purple}`}>
               <Smartphone size={20} />
             </div>

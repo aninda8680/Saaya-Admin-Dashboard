@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import styles from "../../premium.module.css";
+import styles from "@/app/premium.module.css";
 import { Users as UsersIcon, Copy } from "lucide-react";
-
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 type Customer = {
@@ -20,6 +20,7 @@ type Customer = {
 };
 
 export default function UsersPage() {
+  const t = useTranslations("Users");
   const [users, setUsers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,23 +60,23 @@ export default function UsersPage() {
           <div className={`${styles.statIconWrapper} ${styles.blue} mb-2`}>
             <UsersIcon size={24} />
           </div>
-          <h2 className={styles.pageTitle}>Users Management</h2>
+          <h2 className={styles.pageTitle}>{t("title")}</h2>
         </div>
-        <p className={styles.pageSubtitle}>View and manage registered customers.</p>
+        <p className={styles.pageSubtitle}>{t("subtitle")}</p>
       </div>
 
       <div className={styles.dataTableContainer}>
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading users...</div>
+          <div className="p-8 text-center text-gray-400">{t("loading")}</div>
         ) : (
           <table className={styles.dataTable}>
             <thead>
               <tr>
-                <th>Customer UID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Linked Devices</th>
-                <th>Joined</th>
+                <th>{t("colUid")}</th>
+                <th>{t("colName")}</th>
+                <th>{t("colEmail")}</th>
+                <th>{t("colDevices")}</th>
+                <th>{t("colJoined")}</th>
               </tr>
             </thead>
             <tbody>
@@ -122,7 +123,7 @@ export default function UsersPage() {
                         })}
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-sm">None</span>
+                      <span className="text-gray-400 text-sm">{t("noDevices")}</span>
                     )}
                   </td>
                   <td>{formatDate(user.createdAt)}</td>
@@ -130,7 +131,7 @@ export default function UsersPage() {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">No users found.</td>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">{t("noUsers")}</td>
                 </tr>
               )}
             </tbody>

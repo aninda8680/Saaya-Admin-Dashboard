@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "@/src/i18n/routing";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { LayoutDashboard, Users, Smartphone, LogOut, Sun, Moon } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
-import styles from "../premium.module.css";
+import styles from "@/app/premium.module.css";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
+import { Link } from "@/src/i18n/routing";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +18,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("Sidebar");
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
@@ -67,9 +70,9 @@ export default function DashboardLayout({
   }
 
   const navItems = [
-    { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Users", path: "/dashboard/users", icon: Users },
-    { name: "Devices", path: "/dashboard/devices", icon: Smartphone },
+    { name: t("dashboard"), path: "/dashboard", icon: LayoutDashboard },
+    { name: t("users"), path: "/dashboard/users", icon: Users },
+    { name: t("devices"), path: "/dashboard/devices", icon: Smartphone },
   ];
 
   return (
@@ -105,7 +108,7 @@ export default function DashboardLayout({
             </div>
             <button onClick={handleLogout} className={styles.sidebarLogoutBtn}>
               <LogOut size={16} />
-              <span>Logout</span>
+              <span>{t("logout")}</span>
             </button>
           </div>
         </aside>
@@ -113,14 +116,17 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <main className={`${styles.mainContentArea} relative`}>
           {mounted && (
-            <button 
-              onClick={toggleTheme}
-              className="absolute top-8 right-8 p-2 rounded-full transition-colors z-50 hover:opacity-80"
-              style={{ backgroundColor: "var(--border-color)", color: "var(--text-primary)" }}
-              title="Toggle Theme"
-            >
-              {theme === "light" ? <Moon size={22} /> : <Sun size={22} />}
-            </button>
+            <div className="absolute top-8 right-8 z-50 flex items-center gap-4">
+              <LanguageSwitcher className="" />
+              <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full transition-colors hover:opacity-80"
+                style={{ backgroundColor: "var(--border-color)", color: "var(--text-primary)" }}
+                title="Toggle Theme"
+              >
+                {theme === "light" ? <Moon size={22} /> : <Sun size={22} />}
+              </button>
+            </div>
           )}
           {children}
         </main>

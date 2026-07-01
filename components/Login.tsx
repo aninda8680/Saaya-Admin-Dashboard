@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/i18n/routing";
 import { auth } from "@/lib/firebase";
 import { Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import styles from "../app/premium.module.css";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Login() {
   const router = useRouter();
+  const t = useTranslations("Login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -68,12 +71,13 @@ export default function Login() {
 
   return (
     <div className={styles.loginPageContainer}>
+      <LanguageSwitcher />
       <div className={styles.loginCenter}>
         <div className={styles.loginCard}>
           <div className="flex justify-center mb-6">
             <img src="/HV_logo_TM_nobg.png" alt="HV Logo" style={{ width: '160px', height: '160px', objectFit: 'contain' }} />
           </div>
-          <h1 className={styles.loginTitle}>Admin Access</h1>
+          <h1 className={styles.loginTitle}>{t("title")}</h1>
           
           {error && (
             <div className={styles.errorMessage}>
@@ -89,7 +93,7 @@ export default function Login() {
               </div>
               <input
                 type="email"
-                placeholder="Email Address"
+                placeholder={t("emailPlaceholder")}
                 className={styles.loginInputField}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -104,7 +108,7 @@ export default function Login() {
               </div>
               <input
                 type="password"
-                placeholder="Password"
+                placeholder={t("passwordPlaceholder")}
                 className={styles.loginInputField}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -118,7 +122,7 @@ export default function Login() {
               disabled={loading}
               className={styles.submitBtn}
             >
-              {loading ? "Authenticating..." : "Sign In"}
+              {loading ? "Authenticating..." : t("submit")}
               {!loading && <ArrowRight size={18} />}
             </button>
           </div>

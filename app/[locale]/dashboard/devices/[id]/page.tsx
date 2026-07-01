@@ -8,7 +8,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
-import styles from "../../../premium.module.css";
+import styles from "@/app/premium.module.css";
 import {
   ArrowLeft, Smartphone, Battery, Thermometer, Activity, Clock,
   Wifi, WifiOff, BarChart2, Calendar, TrendingUp, Droplets,

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
-import styles from "../../premium.module.css";
+import styles from "@/app/premium.module.css";
 import { Smartphone, Copy } from "lucide-react";
-
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 type Device = {
@@ -18,6 +18,7 @@ type Device = {
 };
 
 export default function DevicesPage() {
+  const t = useTranslations("Devices");
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,22 +106,22 @@ export default function DevicesPage() {
           <div className={`${styles.statIconWrapper} ${styles.purple} mb-2`}>
             <Smartphone size={24} />
           </div>
-          <h2 className={styles.pageTitle}>Devices Management</h2>
+          <h2 className={styles.pageTitle}>{t("title")}</h2>
         </div>
-        <p className={styles.pageSubtitle}>Monitor and manage all connected IoT devices.</p>
+        <p className={styles.pageSubtitle}>{t("subtitle")}</p>
       </div>
 
       <div className={styles.dataTableContainer}>
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading devices...</div>
+          <div className="p-8 text-center text-gray-400">{t("loading")}</div>
         ) : (
           <table className={styles.dataTable}>
             <thead>
               <tr>
-                <th>Device ID</th>
-                <th>Status</th>
-                <th>Owner Name</th>
-                <th>Last Seen</th>
+                <th>{t("colId")}</th>
+                <th>{t("colStatus")}</th>
+                <th>{t("colOwner")}</th>
+                <th>{t("colLastSeen")}</th>
               </tr>
             </thead>
             <tbody>
@@ -157,7 +158,7 @@ export default function DevicesPage() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-400 font-normal">Unassigned</span>
+                        <span className="text-gray-400 font-normal">{t("unassigned")}</span>
                       )}
                     </td>
                     <td>{formatDate(device.lastSeen)}</td>
@@ -166,7 +167,7 @@ export default function DevicesPage() {
               })}
               {devices.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-gray-500">No devices found.</td>
+                  <td colSpan={4} className="text-center py-8 text-gray-500">{t("noDevices")}</td>
                 </tr>
               )}
             </tbody>

@@ -1,0 +1,47 @@
+{
+  "Index": {
+    "title": "Welcome to Saaya Dashboard"
+  },
+  "Login": {
+    "title": "Sign In",
+    "emailPlaceholder": "Email Address",
+    "passwordPlaceholder": "Password",
+    "submit": "Login"
+  },
+  "Sidebar": {
+    "dashboard": "Overview",
+    "users": "Users",
+    "devices": "Devices",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "Dashboard": {
+    "title": "Dashboard Overview",
+    "subtitle": "Monitor your system metrics and user activity.",
+    "totalUsers": "Total Users",
+    "totalDevices": "Total Devices"
+  },
+  "Users": {
+    "title": "Users Management",
+    "subtitle": "View and manage registered customers.",
+    "loading": "Loading users...",
+    "colUid": "Customer UID",
+    "colName": "Name",
+    "colEmail": "Email",
+    "colDevices": "Linked Devices",
+    "colJoined": "Joined",
+    "noDevices": "None",
+    "noUsers": "No users found."
+  },
+  "Devices": {
+    "title": "Devices Management",
+    "subtitle": "Monitor and manage all connected IoT devices.",
+    "loading": "Loading devices...",
+    "colId": "Device ID",
+    "colStatus": "Status",
+    "colOwner": "Owner Name",
+    "colLastSeen": "Last Seen",
+    "unassigned": "Unassigned",
+    "noDevices": "No devices found."
+  }
+}
