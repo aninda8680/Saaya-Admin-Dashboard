@@ -551,3 +551,89 @@
   color: #A0A0A0;
   border: 1px solid rgba(160, 160, 160, 0.2);
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .dashboardLayout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+  }
+  
+  .sidebarBrand {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+  
+  .sidebarBrand img {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .sidebarNav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.5rem;
+  }
+  
+  .sidebarNavItem {
+    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    font-size: 0.875rem;
+  }
+  
+  .sidebarFooter {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    gap: 1rem;
+  }
+  
+  .sidebarUser {
+    display: none;
+  }
+  
+  .sidebarLogoutBtn {
+    width: auto;
+    padding: 0.5rem 1rem;
+  }
+  
+  .dashboardContent {
+    padding: 1.5rem 1rem;
+  }
+  
+  .pageHeader {
+    margin-bottom: 1.5rem;
+  }
+  
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dataTableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .dataTable th, .dataTable td {
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .glassPanel {
+    padding: 1.25rem;
+  }
+}
