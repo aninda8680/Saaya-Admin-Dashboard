@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import {
-  doc, getDoc, collection, getDocs, query, orderBy, limit, where
+  doc, getDoc, collection, getDocs, query, orderBy, limit, where, onSnapshot
 } from "firebase/firestore";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import styles from "@/app/premium.module.css";
 import {
   ArrowLeft, Smartphone, Battery, Thermometer, Activity, Clock,
   Wifi, WifiOff, BarChart2, Calendar, TrendingUp, Droplets,
-  FlaskConical, Zap, Info, Hash, Download, FileSpreadsheet, X,
+  FlaskConical, Zap, Info, Hash, Download, FileSpreadsheet, X, MapPin
 } from "lucide-react";
 
 import { exportCustomReadings, exportDailySummariesCsv } from "./exportUtils";
@@ -166,16 +166,16 @@ export default function DeviceDetailsPage() {
   const [exportEndDate, setExportEndDate] = useState("");
   const [isExporting, setIsExporting] = useState(false);
 
-  useEffect(() => { if (id) fetchAll(); }, [id]);
+  useEffect(() => { 
+    if (!id) return;
+    setLoading(true);
 
-  const fetchAll = async () => {
-    try {
-      // 1. Root device doc
-      const snap = await getDoc(doc(db, "devices", id));
+    const unsubs: (() => void)[] = [];
+
+    // 1. Root device doc
+    unsubs.push(onSnapshot(doc(db, "devices", id), async (snap) => {
       let ownerId: string | null = null;
       let ownerName: string | null = null;
-
-      // Details sub-collection (ownerUserId)
       try {
         const detSnap = await getDocs(collection(db, "devices", id, "details"));
         if (!detSnap.empty) {
@@ -189,114 +189,84 @@ export default function DeviceDetailsPage() {
             }
           }
         }
-      } catch (err) { console.warn("Failed to fetch details:", err); }
+      } catch (err) {}
       setDevice(snap.exists() ? { id: snap.id, ownerUserId: ownerId, ownerName, ...snap.data() } : null);
+      setLoading(false);
+    }));
 
-      // 2. live/latest
-      try {
-        const liveSnap = await getDoc(doc(db, "devices", id, "live", "latest"));
-        if (liveSnap.exists()) setLiveLatest(liveSnap.data());
-      } catch (err) { console.warn("Failed to fetch live/latest:", err); }
+    // 2. live/latest
+    unsubs.push(onSnapshot(doc(db, "devices", id, "live", "latest"), (docSnap) => {
+      if (docSnap.exists()) setLiveLatest(docSnap.data());
+    }));
 
-      // 3. status/current
-      try {
-        const stSnap = await getDoc(doc(db, "devices", id, "status", "current"));
-        if (stSnap.exists()) setStatusDoc(stSnap.data());
-        else {
-          // fallback: old schema stored in live/status
+    // 3. status/current
+    unsubs.push(onSnapshot(doc(db, "devices", id, "status", "current"), async (stSnap) => {
+      if (stSnap.exists()) setStatusDoc(stSnap.data());
+      else {
+        try {
           const oldSnap = await getDoc(doc(db, "devices", id, "live", "status"));
           if (oldSnap.exists()) setStatusDoc(oldSnap.data());
-        }
-      } catch (err) { console.warn("Failed to fetch status/current:", err); }
-
-      // 4. readings (last 10 or selected date)
-      try {
-        let q;
-        if (!selectedDate) {
-          q = query(collection(db, "devices", id, "readings"), orderBy("ts", "desc"), limit(10));
-        } else {
-          const start = new Date(`${selectedDate}T00:00:00`);
-          const end = new Date(`${selectedDate}T23:59:59.999`);
-          q = query(
-            collection(db, "devices", id, "readings"),
-            where("ts", ">=", start),
-            where("ts", "<=", end),
-            orderBy("ts", "desc")
-          );
-        }
-        const rSnap = await getDocs(q);
-        setReadings(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch { /* index may be missing */ }
-
-      // 5. dailySummaries (last 7)
-      try {
-        const dsSnap = await getDocs(collection(db, "devices", id, "dailySummaries"));
-        const all = dsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        all.sort((a, b) => b.id.localeCompare(a.id));
-        setDailySums(all.slice(0, 7));
-      } catch { /* */ }
-
-      // 6. monthlySummaries (last 6)
-      try {
-        const msSnap = await getDocs(collection(db, "devices", id, "monthlySummaries"));
-        const all = msSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const total = all.reduce((sum, ms: any) => sum + (ms.count || 0), 0);
-        setTotalReadingsCount(total);
-        all.sort((a, b) => b.id.localeCompare(a.id));
-        setMonthlySums(all.slice(0, 6));
-      } catch { /* */ }
-
-      // 7. monthly graph (current month)
-      try {
-        const now = new Date();
-        const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        const mgSnap = await getDoc(doc(db, "devices", id, "monthly", monthKey));
-        if (mgSnap.exists()) setMonthlyGraph({ id: mgSnap.id, ...mgSnap.data() });
-      } catch { /* */ }
-
-      // 8. yearly graph (current year)
-      try {
-        const yearKey = String(new Date().getFullYear());
-        const ygSnap = await getDoc(doc(db, "devices", id, "yearly", yearKey));
-        if (ygSnap.exists()) setYearlyGraph({ id: ygSnap.id, ...ygSnap.data() });
-      } catch { /* */ }
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchReadingsForDate = async (dateStr: string) => {
-    setIsLoadingReadings(true);
-    try {
-      let q;
-      if (!dateStr) {
-        q = query(collection(db, "devices", id, "readings"), orderBy("ts", "desc"), limit(10));
-      } else {
-        const start = new Date(`${dateStr}T00:00:00`);
-        const end = new Date(`${dateStr}T23:59:59.999`);
-        q = query(
-          collection(db, "devices", id, "readings"),
-          where("ts", ">=", start),
-          where("ts", "<=", end),
-          orderBy("ts", "desc")
-        );
+        } catch {}
       }
-      const rSnap = await getDocs(q);
-      setReadings(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.warn("Failed to fetch readings for date:", err);
-    } finally {
-      setIsLoadingReadings(false);
-    }
-  };
+    }));
+
+    // 4. dailySummaries (last 7)
+    unsubs.push(onSnapshot(collection(db, "devices", id, "dailySummaries"), (dsSnap) => {
+      const all = dsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      all.sort((a, b) => b.id.localeCompare(a.id));
+      setDailySums(all.slice(0, 7));
+    }));
+
+    // 5. monthlySummaries (last 6)
+    unsubs.push(onSnapshot(collection(db, "devices", id, "monthlySummaries"), (msSnap) => {
+      const all = msSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const total = all.reduce((sum, ms: any) => sum + (ms.count || 0), 0);
+      setTotalReadingsCount(total);
+      all.sort((a, b) => b.id.localeCompare(a.id));
+      setMonthlySums(all.slice(0, 6));
+    }));
+
+    // 6. monthly graph (current month)
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    unsubs.push(onSnapshot(doc(db, "devices", id, "monthly", monthKey), (mgSnap) => {
+      if (mgSnap.exists()) setMonthlyGraph({ id: mgSnap.id, ...mgSnap.data() });
+    }));
+
+    // 7. yearly graph (current year)
+    const yearKey = String(new Date().getFullYear());
+    unsubs.push(onSnapshot(doc(db, "devices", id, "yearly", yearKey), (ygSnap) => {
+      if (ygSnap.exists()) setYearlyGraph({ id: ygSnap.id, ...ygSnap.data() });
+    }));
+
+    return () => unsubs.forEach(u => u());
+  }, [id]);
 
   useEffect(() => {
     if (!id || loading) return;
-    fetchReadingsForDate(selectedDate);
-  }, [selectedDate]);
+    
+    setIsLoadingReadings(true);
+    let q;
+    if (!selectedDate) {
+      q = query(collection(db, "devices", id, "readings"), orderBy("ts", "desc"), limit(10));
+    } else {
+      const start = new Date(`${selectedDate}T00:00:00`);
+      const end = new Date(`${selectedDate}T23:59:59.999`);
+      q = query(
+        collection(db, "devices", id, "readings"),
+        where("ts", ">=", start),
+        where("ts", "<=", end),
+        orderBy("ts", "desc")
+      );
+    }
+    
+    const unsub = onSnapshot(q, (rSnap) => {
+      setReadings(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setIsLoadingReadings(false);
+    });
+
+    return () => unsub();
+  }, [id, selectedDate, loading]);
 
   // Build single day graph data
   const singleDayChartData = useMemo(() => {
@@ -504,6 +474,30 @@ export default function DeviceDetailsPage() {
         </Section>
       </div>
 
+      {/* ── Device Location Map ───────────────────────────────────────────── */}
+      {live.latitude !== undefined && live.longitude !== undefined && (
+        <div className="mb-6">
+          <Section title="Last Known Location" icon={<MapPin size={18} />}>
+            <div className="w-full h-[350px] rounded overflow-hidden border border-[var(--td-border)]">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                frameBorder="0" 
+                scrolling="no" 
+                marginHeight={0} 
+                marginWidth={0} 
+                src={`https://maps.google.com/maps?q=${live.latitude},${live.longitude}&z=15&output=embed`}
+                style={{ border: 0 }}
+                title="Device Location Map"
+              ></iframe>
+            </div>
+            <div className="text-right text-xs text-[var(--text-secondary)] mt-2">
+              Lat: {live.latitude}, Lng: {live.longitude}
+            </div>
+          </Section>
+        </div>
+      )}
+
       {/* ── Row 3: Raw Readings ─────────────────────────── */}
       <div className="mb-6">
 
@@ -601,9 +595,6 @@ export default function DeviceDetailsPage() {
                   <th className="pb-2 pr-3">Avg N</th>
                   <th className="pb-2 pr-3">Avg P</th>
                   <th className="pb-2 pr-3">Avg K</th>
-                  <th className="pb-2 pr-3">Avg Lat</th>
-                  <th className="pb-2 pr-3">Avg Lng</th>
-                  <th className="pb-2 pr-3">Sum Readings</th>
                   <th className="pb-2">Count</th>
                 </tr>
               </thead>
@@ -618,13 +609,10 @@ export default function DeviceDetailsPage() {
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.n, 0)}</td>
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.p, 0)}</td>
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.k, 0)}</td>
-                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.latitude, 6)}</td>
-                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.longitude, 6)}</td>
-                    <td className="py-2 pr-3 text-[var(--text-secondary)]">{ds.sum?.temperature?.toFixed(1) ?? "—"}</td>
                     <td className="py-2 text-[var(--text-secondary)]">{ds.count ?? "—"}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={12} className="py-6 text-center text-[var(--text-secondary)]">No daily summaries yet</td></tr>
+                  <tr><td colSpan={9} className="py-6 text-center text-[var(--text-secondary)]">No daily summaries yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -647,9 +635,6 @@ export default function DeviceDetailsPage() {
                   <th className="pb-2 pr-4">Avg N</th>
                   <th className="pb-2 pr-4">Avg P</th>
                   <th className="pb-2 pr-4">Avg K</th>
-                  <th className="pb-2 pr-4">Avg Lat</th>
-                  <th className="pb-2 pr-4">Avg Lng</th>
-                  <th className="pb-2 pr-4">Sum Readings</th>
                   <th className="pb-2">Count</th>
                 </tr>
               </thead>
@@ -664,13 +649,10 @@ export default function DeviceDetailsPage() {
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.n, 0)}</td>
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.p, 0)}</td>
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.k, 0)}</td>
-                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.latitude, 6)}</td>
-                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.longitude, 6)}</td>
-                    <td className="py-2 pr-4 text-[var(--text-secondary)]">{ms.sum?.temperature?.toFixed(1) ?? "—"}</td>
                     <td className="py-2 text-[var(--text-secondary)]">{ms.count ?? "—"}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={6} className="py-6 text-center text-[var(--text-secondary)]">No monthly summaries yet</td></tr>
+                  <tr><td colSpan={9} className="py-6 text-center text-[var(--text-secondary)]">No monthly summaries yet</td></tr>
                 )}
               </tbody>
             </table>

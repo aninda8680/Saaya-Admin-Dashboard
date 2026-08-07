@@ -100,7 +100,7 @@ export const exportCustomReadings = async (
 
 export const exportDailySummariesCsv = (dailySums: any[], deviceId: string) => {
   if (!dailySums.length) return alert("No daily summaries to export.");
-  const headers = ["Date", "Avg Temperature (C)", "Avg Moisture (%)", "Avg pH", "Avg EC", "Avg N", "Avg P", "Avg K", "Avg Latitude", "Avg Longitude", "Sum Temperature", "Readings Count"];
+  const headers = ["Date", "Avg Temperature (C)", "Avg Moisture (%)", "Avg pH", "Avg EC", "Avg N", "Avg P", "Avg K", "Readings Count"];
   const rows = dailySums.map(ds => [
     ds.id,
     ds.avg?.temperature?.toFixed(2) ?? "",
@@ -110,9 +110,6 @@ export const exportDailySummariesCsv = (dailySums: any[], deviceId: string) => {
     ds.avg?.n?.toFixed(0) ?? "",
     ds.avg?.p?.toFixed(0) ?? "",
     ds.avg?.k?.toFixed(0) ?? "",
-    ds.avg?.latitude?.toFixed(6) ?? "",
-    ds.avg?.longitude?.toFixed(6) ?? "",
-    ds.sum?.temperature?.toFixed(2) ?? "",
     ds.count ?? ""
   ]);
   const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
