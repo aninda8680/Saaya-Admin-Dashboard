@@ -555,6 +555,8 @@ export default function DeviceDetailsPage() {
                   <th className="pb-2 pr-3">N</th>
                   <th className="pb-2 pr-3">P</th>
                   <th className="pb-2 pr-3">K</th>
+                  <th className="pb-2 pr-3">Lat</th>
+                  <th className="pb-2 pr-3">Lng</th>
                   <th className="pb-2">Battery %</th>
                 </tr>
               </thead>
@@ -569,10 +571,12 @@ export default function DeviceDetailsPage() {
                     <td className="py-2 pr-3 font-semibold text-[var(--text-primary)]">{fmt(r.n, 0)}</td>
                     <td className="py-2 pr-3 font-semibold text-[var(--text-primary)]">{fmt(r.p, 0)}</td>
                     <td className="py-2 pr-3 font-semibold text-[var(--text-primary)]">{fmt(r.k, 0)}</td>
+                    <td className="py-2 pr-3 font-semibold text-[var(--text-primary)]">{fmt(r.latitude, 6)}</td>
+                    <td className="py-2 pr-3 font-semibold text-[var(--text-primary)]">{fmt(r.longitude, 6)}</td>
                     <td className="py-2 font-semibold text-[var(--text-primary)]">{r.battery !== undefined ? `${r.battery}%` : "—"}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={9} className="py-6 text-center text-[var(--text-secondary)]">No raw readings found for this selection</td></tr>
+                  <tr><td colSpan={11} className="py-6 text-center text-[var(--text-secondary)]">No raw readings found for this selection</td></tr>
                 )}
               </tbody>
             </table>
@@ -593,6 +597,12 @@ export default function DeviceDetailsPage() {
                   <th className="pb-2 pr-3">Avg Temp</th>
                   <th className="pb-2 pr-3">Avg Moist.</th>
                   <th className="pb-2 pr-3">Avg pH</th>
+                  <th className="pb-2 pr-3">Avg EC</th>
+                  <th className="pb-2 pr-3">Avg N</th>
+                  <th className="pb-2 pr-3">Avg P</th>
+                  <th className="pb-2 pr-3">Avg K</th>
+                  <th className="pb-2 pr-3">Avg Lat</th>
+                  <th className="pb-2 pr-3">Avg Lng</th>
                   <th className="pb-2 pr-3">Sum Readings</th>
                   <th className="pb-2">Count</th>
                 </tr>
@@ -604,11 +614,17 @@ export default function DeviceDetailsPage() {
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.temperature, 1, "°C")}</td>
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.moisture, 1, "%")}</td>
                     <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.ph, 2)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.ec, 2)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.n, 0)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.p, 0)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.k, 0)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.latitude, 6)}</td>
+                    <td className="py-2 pr-3 text-[var(--text-primary)]">{fmt(ds.avg?.longitude, 6)}</td>
                     <td className="py-2 pr-3 text-[var(--text-secondary)]">{ds.sum?.temperature?.toFixed(1) ?? "—"}</td>
                     <td className="py-2 text-[var(--text-secondary)]">{ds.count ?? "—"}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={6} className="py-6 text-center text-[var(--text-secondary)]">No daily summaries yet</td></tr>
+                  <tr><td colSpan={12} className="py-6 text-center text-[var(--text-secondary)]">No daily summaries yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -627,6 +643,12 @@ export default function DeviceDetailsPage() {
                   <th className="pb-2 pr-4">Avg Temp</th>
                   <th className="pb-2 pr-4">Avg Moist.</th>
                   <th className="pb-2 pr-4">Avg pH</th>
+                  <th className="pb-2 pr-4">Avg EC</th>
+                  <th className="pb-2 pr-4">Avg N</th>
+                  <th className="pb-2 pr-4">Avg P</th>
+                  <th className="pb-2 pr-4">Avg K</th>
+                  <th className="pb-2 pr-4">Avg Lat</th>
+                  <th className="pb-2 pr-4">Avg Lng</th>
                   <th className="pb-2 pr-4">Sum Readings</th>
                   <th className="pb-2">Count</th>
                 </tr>
@@ -638,6 +660,12 @@ export default function DeviceDetailsPage() {
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.temperature, 1, "°C")}</td>
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.moisture, 1, "%")}</td>
                     <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.ph, 2)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.ec, 2)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.n, 0)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.p, 0)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.k, 0)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.latitude, 6)}</td>
+                    <td className="py-2 pr-4 text-[var(--text-primary)]">{fmt(ms.avg?.longitude, 6)}</td>
                     <td className="py-2 pr-4 text-[var(--text-secondary)]">{ms.sum?.temperature?.toFixed(1) ?? "—"}</td>
                     <td className="py-2 text-[var(--text-secondary)]">{ms.count ?? "—"}</td>
                   </tr>

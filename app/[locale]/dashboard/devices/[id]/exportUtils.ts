@@ -78,11 +78,13 @@ export const exportCustomReadings = async (
         r.n ?? "",
         r.p ?? "",
         r.k ?? "",
-        r.battery ?? ""
+        r.battery ?? "",
+        r.latitude ?? "",
+        r.longitude ?? ""
       ].join(",");
     });
 
-    const headers = ["Date", "Time", "Temperature (C)", "Moisture (%)", "pH", "EC", "N", "P", "K", "Battery (%)"].join(",");
+    const headers = ["Date", "Time", "Temperature (C)", "Moisture (%)", "pH", "EC", "N", "P", "K", "Battery (%)", "Latitude", "Longitude"].join(",");
     const csvContent = [headers, ...rows].join("\r\n");
     const filename = `readings_${deviceId}_${exportType}.csv`;
     downloadCsv(filename, csvContent);
@@ -98,12 +100,18 @@ export const exportCustomReadings = async (
 
 export const exportDailySummariesCsv = (dailySums: any[], deviceId: string) => {
   if (!dailySums.length) return alert("No daily summaries to export.");
-  const headers = ["Date", "Avg Temperature (C)", "Avg Moisture (%)", "Avg pH", "Sum Temperature", "Readings Count"];
+  const headers = ["Date", "Avg Temperature (C)", "Avg Moisture (%)", "Avg pH", "Avg EC", "Avg N", "Avg P", "Avg K", "Avg Latitude", "Avg Longitude", "Sum Temperature", "Readings Count"];
   const rows = dailySums.map(ds => [
     ds.id,
     ds.avg?.temperature?.toFixed(2) ?? "",
     ds.avg?.moisture?.toFixed(2) ?? "",
     ds.avg?.ph?.toFixed(2) ?? "",
+    ds.avg?.ec?.toFixed(2) ?? "",
+    ds.avg?.n?.toFixed(0) ?? "",
+    ds.avg?.p?.toFixed(0) ?? "",
+    ds.avg?.k?.toFixed(0) ?? "",
+    ds.avg?.latitude?.toFixed(6) ?? "",
+    ds.avg?.longitude?.toFixed(6) ?? "",
     ds.sum?.temperature?.toFixed(2) ?? "",
     ds.count ?? ""
   ]);
