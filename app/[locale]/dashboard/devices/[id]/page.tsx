@@ -190,7 +190,10 @@ export default function DeviceDetailsPage() {
           }
         }
       } catch (err) {}
-      setDevice(snap.exists() ? { id: snap.id, ownerUserId: ownerId, ownerName, ...snap.data() } : null);
+      
+      const deviceData = snap.exists() ? snap.data() : { status: "unknown", firmwareVersion: "unknown (ghost doc)" };
+      setDevice({ id, ownerUserId: ownerId, ownerName, ...deviceData });
+      
       setLoading(false);
     }));
 

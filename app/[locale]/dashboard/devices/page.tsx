@@ -35,7 +35,7 @@ export default function DevicesPage() {
         ...doc.data()
       })) as Device[];
       
-      const deviceIdsInDb = new Set(devicesData.map(d => d.id));
+      const deviceIdsInDb = new Set(devicesData.map(d => String(d.id).trim()));
 
       // 2. Fetch customers to build device -> owner map
       const customersSnap = await getDocs(collection(db, "customers"));
@@ -48,14 +48,27 @@ export default function DevicesPage() {
         
         if (customerData.devices && Array.isArray(customerData.devices)) {
           customerData.devices.forEach((deviceItem: any) => {
-            const deviceIdStr = typeof deviceItem === 'object' && deviceItem !== null 
-              ? deviceItem.deviceId 
-              : String(deviceItem);
-            if (deviceIdStr) {
+            let deviceIdStr = '';
+            if (typeof deviceItem === 'object' && deviceItem !== null) {
+              if (deviceItem.deviceId) {
+                deviceIdStr = String(deviceItem.deviceId);
+              } else if (deviceItem.id) { // in case it's a DocumentReference
+                deviceIdStr = String(deviceItem.id);
+              } else {
+                deviceIdStr = String(deviceItem);
+              }
+            } else {
+              deviceIdStr = String(deviceItem);
+            }
+            
+            deviceIdStr = deviceIdStr.trim();
+
+            if (deviceIdStr && deviceIdStr !== '[object Object]') {
               deviceToOwnerMap[deviceIdStr] = { id: customerId, name: fullName };
               
               // If the device exists in customer array but not as a document in 'devices' collection, add it
               if (!deviceIdsInDb.has(deviceIdStr)) {
+                console.log("Adding missing device from customer:", deviceIdStr);
                 devicesData.push({
                   id: deviceIdStr,
                   status: 'unknown',
@@ -68,6 +81,7 @@ export default function DevicesPage() {
         }
       });
 
+      console.log("Total devices after merge:", devicesData.length);
       // 3. Inject owner and fetch last seen
       await Promise.all(devicesData.map(async (device) => {
         if (deviceToOwnerMap[device.id]) {
