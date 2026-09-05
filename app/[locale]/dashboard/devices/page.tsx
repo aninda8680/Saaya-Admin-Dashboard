@@ -35,6 +35,8 @@ export default function DevicesPage() {
         ...doc.data()
       })) as Device[];
       
+      const deviceIdsInDb = new Set(devicesData.map(d => d.id));
+
       // 2. Fetch customers to build device -> owner map
       const customersSnap = await getDocs(collection(db, "customers"));
       const deviceToOwnerMap: Record<string, { id: string, name: string }> = {};
@@ -51,6 +53,16 @@ export default function DevicesPage() {
               : String(deviceItem);
             if (deviceIdStr) {
               deviceToOwnerMap[deviceIdStr] = { id: customerId, name: fullName };
+              
+              // If the device exists in customer array but not as a document in 'devices' collection, add it
+              if (!deviceIdsInDb.has(deviceIdStr)) {
+                devicesData.push({
+                  id: deviceIdStr,
+                  status: 'unknown',
+                  firmwareVersion: 'unknown',
+                });
+                deviceIdsInDb.add(deviceIdStr);
+              }
             }
           });
         }
