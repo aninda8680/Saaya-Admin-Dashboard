@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "@/src/i18n/routing";
+import { useRouter } from "@/src/i18n/routing";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { LayoutDashboard, Users, Smartphone, LogOut, Sun, Moon } from "lucide-react";
-import Image from "next/image";
-import styles from "@/app/premium.module.css";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { useTranslations } from "next-intl";
-import { Link } from "@/src/i18n/routing";
+import Sidebar from "@/components/Sidebar";
+import TopNavbar from "@/components/TopNavbar";
 
 export default function DashboardLayout({
   children,
@@ -17,17 +13,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const t = useTranslations("Sidebar");
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         router.push("/login");
       } else {
+        setUserEmail(user.email || undefined);
         setLoading(false);
       }
     });
@@ -35,99 +31,76 @@ export default function DashboardLayout({
   }, [router]);
 
   useEffect(() => {
-    setMounted(true);
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark" || savedTheme === "light") {
       setTheme(savedTheme);
       document.documentElement.setAttribute("data-theme", savedTheme);
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+      const initialTheme = prefersDark ? "dark" : "light";
+      setTheme(initialTheme);
+      document.documentElement.setAttribute("data-theme", initialTheme);
     }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem("theme", next);
+    document.documentElement.setAttribute("data-theme", next);
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
   };
 
   if (loading) {
     return (
-      <div className={styles.pageContainer} style={{ justifyContent: "center", alignItems: "center" }}>
-        <div className="animate-pulse">
-          <img src="/HV_logo_TM_nobg.png" alt="HV Logo" style={{ width: '140px', height: '140px', objectFit: 'contain' }} />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-center justify-center shadow-lg">
+            <img
+              src="/HV_logo_TM_nobg.png"
+              alt="Harit Vikas Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Loading Saaya Dashboard...
+            </span>
+            <span className="text-xs text-slate-400">Verifying secure admin credentials</span>
+          </div>
         </div>
       </div>
     );
   }
 
-  const navItems = [
-    { name: t("dashboard"), path: "/dashboard", icon: LayoutDashboard },
-    { name: t("users"), path: "/dashboard/users", icon: Users },
-    { name: t("devices"), path: "/dashboard/devices", icon: Smartphone },
-  ];
-
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.dashboardLayout}>
-        {/* Sidebar */}
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarBrand}>
-            <img src="/HV_logo_TM_nobg.png" alt="HV Logo" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
-            <span>Saaya Dashboard</span>
-          </div>
+    <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+      {/* Sidebar Navigation */}
+      <Sidebar
+        onLogout={handleLogout}
+        userEmail={userEmail}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
-          <div className={styles.sidebarNav}>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`${styles.sidebarNavItem} ${isActive ? styles.active : ""}`}
-                >
-                  <Icon size={20} />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
+      {/* Main Workspace */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopNavbar
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          userEmail={userEmail}
+        />
 
-          <div className={styles.sidebarFooter}>
-            <div className={styles.sidebarUser}>
-              <span className={styles.userEmail}>{auth.currentUser?.email || "admin@saaya.app"}</span>
-            </div>
-            <button onClick={handleLogout} className={styles.sidebarLogoutBtn}>
-              <LogOut size={16} />
-              <span>{t("logout")}</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Main Content Area */}
-        <main className={`${styles.mainContentArea} relative`}>
-          {mounted && (
-            <div className="absolute top-8 right-8 z-50 flex items-center gap-4">
-              <LanguageSwitcher className="" />
-              <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-full transition-colors hover:opacity-80"
-                style={{ backgroundColor: "var(--border-color)", color: "var(--text-primary)" }}
-                title="Toggle Theme"
-              >
-                {theme === "light" ? <Moon size={22} /> : <Sun size={22} />}
-              </button>
-            </div>
-          )}
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

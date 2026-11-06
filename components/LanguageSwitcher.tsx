@@ -1,9 +1,15 @@
 "use client";
 
-import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/src/i18n/routing';
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "@/src/i18n/routing";
 
-export default function LanguageSwitcher({ className = "absolute top-4 right-4 z-50" }: { className?: string }) {
+export default function LanguageSwitcher({
+  className = "",
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -14,14 +20,19 @@ export default function LanguageSwitcher({ className = "absolute top-4 right-4 z
   };
 
   return (
-    <div className={className}>
+    <div className={`relative inline-flex items-center ${className}`}>
       <select
         value={locale}
         onChange={handleLanguageChange}
-        className="bg-slate-800 border border-slate-600 text-slate-200 rounded-md px-3 py-1.5 text-sm outline-none focus:border-blue-500 transition-colors shadow-sm cursor-pointer"
+        aria-label="Select language"
+        className="bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md text-zinc-600 dark:text-zinc-400 text-xs py-1 px-2 outline-none cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 font-mono transition-colors"
       >
-        <option value="en">English</option>
-        <option value="bn">বাংলা (Bengali)</option>
+        <option value="en" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+          EN
+        </option>
+        <option value="bn" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+          বাংলা
+        </option>
       </select>
     </div>
   );
